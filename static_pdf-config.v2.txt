@@ -1,0 +1,71 @@
+[main]
+#根据index去识别整体html排版
+title=Micro16s static brief report
+
+
+[1]
+subtitle = 1 项目信息
+prolog = 
+topic = 本项目的基本信息见下表:
+caption = 表1  项目信息
+tablepath = src/project.info
+type = table
+conclusion =
+
+[2]
+subtitle = 2 实验流程
+prolog =
+topic  = 取质量合格的基因组DNA样品30ng及对应的融合引物配置PCR反应体系，设置PCR反应参数进行PCR扩增，使用Agencourt AMPure XP磁珠对PCR扩增产物进行纯化并溶于Elution Buffer，贴上标签，完成建库。使用Agilent 2100 Bioanalyzer 对文库的片段范围及浓度进行检测。检测合格的文库根据插入片段大小，选择HiSeq平台进行测序。
+caption = 图1  实验流程. 
+pngpath = src/实验图.png
+type = png
+conclusion = 
+[3]
+subtitle = 3 信息分析流程
+caption = 图2  信息分析流程.
+prolog = 
+topic = 下机数据过滤，剩余高质量的Clean data用于后期分析；通过reads之间的overlap关系将reads拼接成Tags；将Tags聚类成OTU并与数据库比对、物种注释；基于OTU和注释结果进行样品物种复杂度分析，组间物种差异分析，以及关联分析与模型预测等。
+pngpath = src/流程图.png
+type = png
+conclusion = 
+[4]
+subtitle = 4 数据过滤
+caption =  表2  数据过滤统计表
+prolog = 
+topic = 对原始的测序数据进行如下处理，获得Clean Data，具体步骤如下：\n1)去除质量值≤20的碱基数达到20%%的reads；\n2)去除含N的reads；\n3)将能匹配到引物的reads，截取掉引物和接头污染，得到最终的Cleandata。
+tablepath = src/cleandata_stat.xls
+type = table
+conclusion = 第一列样本名称，第二列reads长度，第三列未过滤的rawadata，第四列N的比例，第五列poly碱基的比例，第六列低质量的比例，第七列高质量数据的cleandata，第八列cleandata/rawdata，第九列rawdata的条数，第十列cleandata的条数，第十一列匹配到primer的reads条数，第十二列匹配到primer的reads与rawdata的比例。
+[5]
+subtitle = 5 Tags连接
+caption =    表3 tag拼接统计表
+prolog = 
+topic = 如果聚类方法用的是USEARCH，要用这里的tag进行OTU聚类，如果聚类方案用的是DADA2，那么此处的tag仅作为数据质控，tag将在DADA2包中处理。\n序列拼接使用软件FLASH（Fast Length Adjustment of Short reads，v1.2.11），利用重叠关系将双末端测序得到的成对reads组装成一条序列，得到高变区的Tags。拼接条件如下：\n1)最小匹配长度15 bp；\n2)重叠区域允许错配率为0.1。
+tablepath = src/tag_stat.xls
+type = table
+conclusion = 第一列样本名称，第二列高质量的clean reads条数，第三列拼接为tag的reads条数，第四列tag拼接率。
+
+[6]
+subtitle = 6 OTU聚类结果统计
+caption = 表4  OTU结果统计表
+topic =OTU聚类有两种方法，Usearch和DADA2。Usearch:按照97%%序列相似性聚类生成OTU；DADA2：通过去噪的序列以100%%的相似度聚类来生成ASV序列，这里统称为OTU。\nUsearch:\n利用软件USEARCH（v7 .0.1090）将拼接好的 Tags聚类为OTU。其主要过程如下：\n1) 利用UPARSE在97 %%相似度下进行聚类，得到OTU的代表序列；\n2) 利用UCHIME（v4.2.40）将PCR扩增产生的嵌合体从OTU代表序列中去除；\n(16S和ITS采取和已有的嵌合体数据库进行比对的方法去除嵌合体。18S采取De novo的方法去除嵌合体\n16S嵌合体数据库：gold database（v20110519）\nITS嵌合体数据库：UNITE（v201407 03），分为ITS全长，ITS1和ITS2，按测序区域进行选择)\n3) 使用usearch_global方法将所有Tags比对回OTU代表序列，得到每个样品的OTU的丰度统计表。\nDADA2：利用软件QIIME2中的DADA2（Divisive Amplicon Denoising Algorithm）方法去噪，获得Amplicon Sequence Variants (ASVs)，ASV为100%%相似的序列。进而得到特征表（Feature，对ASV/ASV等的统称）。其主要过程如下：1) 利用qiime tools import导入过滤后的双端序列；\n2) 利用qiime dada2 denoise-paired命令将导入后的双端序列基于DADA2的方法构建特征表；\n3) 利用qiime tools export将特征表转换成可以直接查看的格式；\n
+prolog = 
+type = table
+tablepath = src/otu_stat.xls
+conclusion = 第一列样本名称，第二列tag条数，第三列OTU个数。
+
+[7]
+subtitle = 6 OTU注释
+caption =  
+prolog = 
+topic = 得到OTU代表序列后，通过RDP classifer（v2.2）软件将OTU代表序列与数据库有比对进行物种注释，置信度阈值设置为0.6。\n比对数据库：\n16S（包括细菌与古菌）：Greengene（默认）： V201305[8] ; RDP： Release9 201203[6]\n18S 真菌：Silva（默认）： V119[7]\nITS 真菌：UNITE（默认）：Version6 20140910[9]\n对注释结果进行如下过滤：\n1.去除没有注释结果的OTU；\n2.去除注释结果不属于分析项目中的物种。例如，样品为细菌16S，如果OTU注释上古菌则去除。\n剩余的OTU方可用于后期分析。\n
+type = paragraph
+conclusion = 
+[8]
+subtitle = 7 物种组成分析
+prolog =
+topic = 物种柱状图可以直观的展示各样本物种组成及比例，反映样本间物种的变化情况。通过与数据库进行比对，对OTU进行物种分类，并分别在门、纲、目、科、属、种水平对各样品作物种丰度柱状图（门水平画所有物种的柱状图，从纲水平开始，将物种丰度在所有样品均低于0.5%%和没有分类的物种全部合并成Others）。为了得到每个OTU 对应的物种分类信息，采用RDP classifier 贝叶斯算法对OTU 代表序列进行分类学分析，并在界门纲目科属种水平统计各样本的群落组成。\n本报告只展示所有样品属水平的结果。
+caption = 图3 属水平物种丰度柱状图。
+type = png
+pngpath = src/barplot.png
+conclusion = 物种丰度柱状图。横坐标是样本名称，纵坐标是注释到的物种相对丰度。该分类水平未注释到的合并为Unclassified, 丰度在所有样品均低于0.5%%和没有分类的物种全部合并成Others。

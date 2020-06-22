@@ -1,0 +1,1 @@
+static_pdf-config.v2.txt
